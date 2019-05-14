@@ -1,0 +1,27 @@
+---
+- name: Gathering VM Info
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: "/usr/bin/env python3.6"
+  hosts: localhost
+  tasks:
+    - set_fact:
+        vm_name: "ansibletest.tom.future.lab"
+        datacenter: "CMP1-MGMT"
+        vcenter: "vc-mgmt.tom.future.lab"
+        vcenter_user: "ansible_test@tom.future.lab"
+        vcenter_pass: "SSMzLp6Ep5"
+
+    - name: Gather facts from a Single VM
+      vmware_guest_facts:
+        hostname: '{{ vcenter }}'
+        username: '{{ vcenter_user }}'
+        password: '{{ vcenter_pass }}'
+        datacenter: '{{ datacenter }}'
+        validate_certs: no
+        name: '{{ vm_name }}'
+      delegate_to: localhost
+      register: facts
+
+    - debug:
+        var: facts

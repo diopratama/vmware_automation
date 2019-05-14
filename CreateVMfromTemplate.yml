@@ -1,0 +1,28 @@
+---
+- name: Creating a VM
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: "/usr/bin/env python3.6"
+  hosts: localhost
+  tasks:
+    - set_fact:
+        vm_name: "ansibletest.tom.future.lab"
+        datacenter: "CMP1-MGMT"
+        vcenter: "vc-mgmt.tom.future.lab"
+        vcenter_user: "ansible_test@tom.future.lab"
+        vcenter_pass: "SSMzLp6Ep5"
+        template: "CentOS-7-Minimal"
+
+    - name: Clone the template
+      vmware_guest:
+        hostname: "{{ vcenter }}"
+        username: "{{ vcenter_user }}"
+        password: "{{ vcenter_pass }}"
+        validate_certs: False
+        name: "automagic"
+        template: "{{ template }}"
+        datacenter: "{{ datacenter }}"
+        folder: "/{{ datacenter }}/vm/Ansible_Test"
+        state: poweredon
+        wait_for_ip_address: yes
+      delegate_to: localhost

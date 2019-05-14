@@ -1,0 +1,56 @@
+---
+- name: Testing vmware_vm_facts
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: "/usr/bin/env python3.6"
+  hosts: localhost
+  tasks:
+    - set_fact:
+        vm_user: "root"
+        vm_pass: "changeme123"
+        datacenter: "CMP1-MGMT"
+        vcenter: "vc-mgmt.tom.future.lab"
+        vcenter_user: "ansible_test@tom.future.lab"
+        vcenter_pass: "SSMzLp6Ep5"
+
+    - name: Gather all registered virtual machines
+      vmware_vm_facts:
+        hostname: '{{ vcenter }}'
+        username: '{{ vcenter_user }}'
+        password: '{{ vcenter_pass }}'
+        validate_certs: no
+        vm_type: vm
+      delegate_to: localhost
+      register: vmfacts
+
+    - name: Executing Hello World on all CentOS servers in the lab
+      vmware_vm_shell:
+        hostname: "{{ vcenter }}"
+        username: "{{ vcenter_user }}"
+        password: "{{ vcenter_pass }}"
+        validate_certs: no
+        datacenter: "{{ datacenter }}"
+        folder: /vm
+        vm_id: "{{ item.key }}"
+        vm_username: "{{ vm_user }}"
+        vm_password: "{{ vm_pass }}"
+        vm_shell: /bin/echo
+        vm_shell_args: " Hello World"
+        vm_shell_env:
+          - "PATH=/bin"
+        vm_shell_cwd: "/tmp"
+      delegate_to: localhost
+      ignore_errors: yes
+      when:
+        - item.value.guest_fullname | search("CentOS")
+        - item.value.cluster == "lex-mgmt"
+        - item.value.power_state == "poweredOn"
+      failed_when:
+        - item.value.guest_fullname | search("CentOS")
+        - item.value.cluster == "lex-mgmt"
+        - item.value.power_state == "poweredOff"
+      with_dict: "{{ vmfacts.virtual_machines }}"
+      register: results
+
+    - debug:
+        var: results
